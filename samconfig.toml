@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "Budget-Buddy"
+resolve_s3 = true
+s3_prefix = "Budget-Buddy"
+region = "ap-southeast-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "ModelBucket=\"budget-buddy-3110\""
+image_repositories = ["PredictFunction=555108715183.dkr.ecr.ap-southeast-2.amazonaws.com/budgetbuddyfadd4882/predictfunction975a0b7frepo"]
+
+[default.global.parameters]
+region = "ap-southeast-2"

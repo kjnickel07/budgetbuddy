@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: BudgetBuddy - Lambda + API Gateway that serve token predictions
+
+Parameters:
+  ModelBucket:
+    Type: String
+    Description: The S3 bucket that holds models/current/model.tar.gz
+
+Resources:
+  PredictFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: budget-buddy-predict
+      PackageType: Image
+      MemorySize: 3008        # the most new accounts allow; Lambda gives ~1 CPU per 1769 MB, and the model needs CPU
+      Timeout: 30             # API Gateway gives up after 30 s anyway
+      EphemeralStorage:
+        Size: 1024            # /tmp in MB; the unpacked model is ~290 MB
+      Environment:
+        Variables:
+          MODEL_BUCKET: !Ref ModelBucket
+          MODEL_KEY: models/current/model.tar.gz
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ModelBucket
+      Events:
+        Predict:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /predict
+            Method: POST
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./lambda_fn
+      DockerTag: latest
+
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]   # tighten to your Amplify URL once you have it
+        AllowMethods: [POST, OPTIONS]
+        AllowHeaders: [content-type]
+
+Outputs:
+  PredictUrl:
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/predict"
